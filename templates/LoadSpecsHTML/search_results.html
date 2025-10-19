@@ -1,0 +1,132 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+{% load static %}
+
+{% block title %}Search Results - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2><i class="fas fa-search"></i> Search Results for "{{ search_results.query }}"</h2>
+    
+    {% if search_results.users or search_results.teams or search_results.tasks %}
+        
+        <!-- Users Results -->
+        {% if search_results.users %}
+        <div class="card-custom mt-4">
+            <h4><i class="fas fa-users"></i> Users ({{ search_results.users|length }})</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for found_user in search_results.users %}
+                        <tr>
+                            <td><strong>{{ found_user.username }}</strong></td>
+                            <td>{{ found_user.first_name }} {{ found_user.last_name }}</td>
+                            <td>{{ found_user.email }}</td>
+                            <td>
+                                {% if found_user.is_team_lead %}
+                                    <span class="badge bg-primary">Team Lead</span>
+                                {% elif found_user.is_employee %}
+                                    <span class="badge bg-info">Employee</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Teams Results -->
+        {% if search_results.teams %}
+        <div class="card-custom mt-4">
+            <h4><i class="fas fa-user-friends"></i> Teams ({{ search_results.teams|length }})</h4>
+            <div class="row">
+                {% for team in search_results.teams %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ team.team_name }}</h5>
+                            <p class="card-text">{{ team.description|truncatewords:20 }}</p>
+                            <p class="text-muted">
+                                <small>
+                                    Created by: {{ team.created_by.username }}<br>
+                                    Members: {{ team.member_count }}<br>
+                                    Join Code: <code>{{ team.join_code }}</code>
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Tasks Results -->
+        {% if search_results.tasks %}
+        <div class="card-custom mt-4">
+            <h4><i class="fas fa-tasks"></i> Tasks ({{ search_results.tasks|length }})</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Assigned To</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in search_results.tasks %}
+                        <tr>
+                            <td><strong>{{ task.title }}</strong></td>
+                            <td>{{ task.assigned_to.username }}</td>
+                            <td>
+                                {% if task.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif task.status == 'in_progress' %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.priority == 'high' %}
+                                    <span class="badge bg-danger">High</span>
+                                {% elif task.priority == 'medium' %}
+                                    <span class="badge bg-warning">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-info">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.due_date|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+    {% else %}
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle"></i> No results found for "{{ search_results.query }}". Try a different search term.
+        </div>
+    {% endif %}
+    
+    <div class="mt-4">
+        <a href="{% url 'home' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

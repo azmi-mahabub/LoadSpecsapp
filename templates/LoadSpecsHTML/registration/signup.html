@@ -1,0 +1,452 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoadSpecs - Sign Up</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .signup-container {
+            background: linear-gradient(135deg, #f5d7d7 0%, #e8c5c5 100%);
+            border-radius: 30px;
+            padding: 60px 80px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        .signup-box h2 {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .signup-box h1 {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: white;
+            font-size: 14px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .role-select {
+            margin-bottom: 30px;
+        }
+        
+        .role-select label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .role-select select {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .btn-signup {
+            width: 200px;
+            padding: 12px;
+            background-color: #6c9bd1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+            display: block;
+            margin-left: 0;
+        }
+        
+        .btn-signup:hover {
+            background-color: #5a89bf;
+        }
+        
+        .login-link {
+            margin-top: 20px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .login-link a {
+            color: #333;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        
+        .login-link a:hover {
+            color: #6c9bd1;
+        }
+        
+        .messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+        
+        @media (max-width: 768px) {
+            .signup-container {
+                padding: 40px 30px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .signup-box h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="signup-container">
+        <div class="signup-box">
+            <h2>Welcome To LoadSpecs</h2>
+            <h1>Sign Up</h1>
+            
+            <form method="POST" id="signupForm">
+                {% csrf_token %}
+                
+                <div class="role-select">
+                    <label for="{{ form.user_type.id_for_label }}">Signup As:</label>
+                    {{ form.user_type }}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}">First Name <span style="color: red;">*</span></label>
+                        {{ form.first_name }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}">Last Name <span style="color: red;">*</span></label>
+                        {{ form.last_name }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}">Username (Unique) <span style="color: red;">*</span></label>
+                        {{ form.username }}
+                        <div id="usernameCheck" style="margin-top: 5px; font-size: 12px;"></div>
+                        <small style="color: #666; font-size: 12px;">Must be unique. Letters, digits and @/./+/-/_ only.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">Email Address <span style="color: red;">*</span></label>
+                        {{ form.email }}
+                        <div id="emailCheck" style="margin-top: 5px; font-size: 12px;"></div>
+                    </div>
+                </div>
+                
+                <!-- Company Name Fields (Show/Hide based on role) -->
+                <div class="form-row" id="companyNameRow" style="display: none;">
+                    <div class="form-group" id="teamLeadCompanyDiv" style="display: none;">
+                        <label for="{{ form.company_name_input.id_for_label }}">Company Name <span style="color: red;">*</span></label>
+                        {{ form.company_name_input }}
+                        <small style="color: #666; font-size: 12px;">Enter the name of your company/organization</small>
+                    </div>
+                    
+                    <div class="form-group" id="employeeCompanyDiv" style="display: none;">
+                        <label for="{{ form.company_name_select.id_for_label }}">Select Company <span style="color: red;">*</span></label>
+                        {{ form.company_name_select }}
+                        <small style="color: #666; font-size: 12px;">Choose the company you work for</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.password1.id_for_label }}">Password <span style="color: red;">*</span></label>
+                        {{ form.password1 }}
+                        <div id="passwordStrength" style="margin-top: 5px; font-size: 12px;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.password2.id_for_label }}">Confirm Password <span style="color: red;">*</span></label>
+                        {{ form.password2 }}
+                        <div id="passwordMatch" style="margin-top: 5px; font-size: 12px;"></div>
+                    </div>
+                </div>
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <p>{% if field != '__all__' %}<strong>{{ field|title }}:</strong> {% endif %}{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <button type="submit" class="btn-signup">Sign Up</button>
+            </form>
+            
+            <div class="login-link">
+                Already have an account? <a href="{% url 'login' %}">Log In</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Show/Hide Company Fields Based on User Type
+        document.addEventListener('DOMContentLoaded', function() {
+            const userTypeSelect = document.getElementById('{{ form.user_type.id_for_label }}');
+            const companyRow = document.getElementById('companyNameRow');
+            const teamLeadDiv = document.getElementById('teamLeadCompanyDiv');
+            const employeeDiv = document.getElementById('employeeCompanyDiv');
+            const teamLeadInput = document.getElementById('company_name_input');
+            const employeeSelect = document.getElementById('company_name_select');
+            
+            function updateCompanyFields() {
+                const userType = userTypeSelect.value;
+                
+                if (userType === 'team_lead') {
+                    companyRow.style.display = 'grid';
+                    teamLeadDiv.style.display = 'block';
+                    employeeDiv.style.display = 'none';
+                    teamLeadInput.required = true;
+                    employeeSelect.required = false;
+                } else if (userType === 'employee') {
+                    companyRow.style.display = 'grid';
+                    teamLeadDiv.style.display = 'none';
+                    employeeDiv.style.display = 'block';
+                    teamLeadInput.required = false;
+                    employeeSelect.required = true;
+                } else {
+                    companyRow.style.display = 'none';
+                    teamLeadDiv.style.display = 'none';
+                    employeeDiv.style.display = 'none';
+                    teamLeadInput.required = false;
+                    employeeSelect.required = false;
+                }
+            }
+            
+            // Initialize on page load
+            updateCompanyFields();
+            
+            // Update when user type changes
+            userTypeSelect.addEventListener('change', updateCompanyFields);
+        });
+        
+        // Real-time Username Checker
+        let usernameTimeout;
+        document.getElementById('{{ form.username.id_for_label }}').addEventListener('input', function() {
+            const username = this.value;
+            const checkDiv = document.getElementById('usernameCheck');
+            
+            clearTimeout(usernameTimeout);
+            
+            if (username.length < 3) {
+                checkDiv.innerHTML = '';
+                return;
+            }
+            
+            checkDiv.innerHTML = '<span style="color: #6c757d;">Checking...</span>';
+            
+            usernameTimeout = setTimeout(function() {
+                fetch(`/api/check-username/?username=${encodeURIComponent(username)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.available) {
+                            checkDiv.innerHTML = `<span style="color: #28a745;">✓ ${data.message}</span>`;
+                        } else {
+                            checkDiv.innerHTML = `<span style="color: #dc3545;">✗ ${data.message}</span>`;
+                        }
+                    })
+                    .catch(error => {
+                        checkDiv.innerHTML = '<span style="color: #dc3545;">Error checking username</span>';
+                    });
+            }, 500);
+        });
+        
+        // Real-time Email Checker
+        let emailTimeout;
+        document.getElementById('{{ form.email.id_for_label }}').addEventListener('input', function() {
+            const email = this.value;
+            const checkDiv = document.getElementById('emailCheck');
+            
+            clearTimeout(emailTimeout);
+            
+            if (email.length < 5 || !email.includes('@')) {
+                checkDiv.innerHTML = '';
+                return;
+            }
+            
+            checkDiv.innerHTML = '<span style="color: #6c757d;">Checking...</span>';
+            
+            emailTimeout = setTimeout(function() {
+                fetch(`/api/check-email/?email=${encodeURIComponent(email)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.available) {
+                            checkDiv.innerHTML = `<span style="color: #28a745;">✓ ${data.message}</span>`;
+                        } else {
+                            checkDiv.innerHTML = `<span style="color: #dc3545;">✗ ${data.message}</span>`;
+                        }
+                    })
+                    .catch(error => {
+                        checkDiv.innerHTML = '<span style="color: #dc3545;">Error checking email</span>';
+                    });
+            }, 500);
+        });
+        
+        // Password Strength Indicator
+        document.getElementById('password1').addEventListener('input', function() {
+            const password = this.value;
+            const strengthDiv = document.getElementById('passwordStrength');
+            
+            if (password.length === 0) {
+                strengthDiv.innerHTML = '';
+                return;
+            }
+            
+            let strength = 0;
+            let feedback = '';
+            
+            // Check length
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            
+            // Check for numbers
+            if (/\d/.test(password)) strength++;
+            
+            // Check for lowercase and uppercase
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            
+            // Check for special characters
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            // Determine strength level
+            if (strength <= 2) {
+                feedback = '<span style="color: #dc3545;">&#9679; Weak password</span>';
+            } else if (strength <= 3) {
+                feedback = '<span style="color: #ffc107;">&#9679;&#9679; Medium password</span>';
+            } else {
+                feedback = '<span style="color: #28a745;">&#9679;&#9679;&#9679; Strong password</span>';
+            }
+            
+            strengthDiv.innerHTML = feedback;
+        });
+        
+        // Password Match Indicator
+        document.getElementById('password2').addEventListener('input', function() {
+            const password1 = document.getElementById('password1').value;
+            const password2 = this.value;
+            const matchDiv = document.getElementById('passwordMatch');
+            
+            if (password2.length === 0) {
+                matchDiv.innerHTML = '';
+                return;
+            }
+            
+            if (password1 === password2) {
+                matchDiv.innerHTML = '<span style="color: #28a745;">✓ Passwords match</span>';
+            } else {
+                matchDiv.innerHTML = '<span style="color: #dc3545;">✗ Passwords do not match</span>';
+            }
+        });
+        
+        // Also check match when password1 changes
+        document.getElementById('password1').addEventListener('input', function() {
+            const password2 = document.getElementById('password2').value;
+            if (password2.length > 0) {
+                const matchDiv = document.getElementById('passwordMatch');
+                if (this.value === password2) {
+                    matchDiv.innerHTML = '<span style="color: #28a745;">✓ Passwords match</span>';
+                } else {
+                    matchDiv.innerHTML = '<span style="color: #dc3545;">✗ Passwords do not match</span>';
+                }
+            }
+        });
+        
+        // Form validation before submit
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const password1 = document.getElementById('password1').value;
+            const password2 = document.getElementById('password2').value;
+            
+            if (password1 !== password2) {
+                e.preventDefault();
+                alert('Passwords do not match. Please check and try again.');
+                return false;
+            }
+            
+            if (password1.length < 8) {
+                e.preventDefault();
+                alert('Password must be at least 8 characters long.');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

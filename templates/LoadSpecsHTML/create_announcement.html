@@ -1,0 +1,71 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+{% load static %}
+
+{% block title %}Create Announcement - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-bullhorn"></i> Create Announcement</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="team">Select Team</label>
+                            <select name="team" id="team" class="form-control" required>
+                                <option value="">Choose a team...</option>
+                                {% for team in teams %}
+                                    <option value="{{ team.id }}">{{ team.team_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" name="title" id="title" class="form-control" 
+                                   placeholder="Enter announcement title" required maxlength="200">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="announcement_type">Type</label>
+                            <select name="announcement_type" id="announcement_type" class="form-control">
+                                <option value="general">General</option>
+                                <option value="important">Important</option>
+                                <option value="motivational">Motivational</option>
+                                <option value="update">Update</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="content">Content</label>
+                            <textarea name="content" id="content" class="form-control" rows="6" 
+                                      placeholder="Write your announcement here..." required></textarea>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="is_pinned" id="is_pinned" class="form-check-input">
+                            <label for="is_pinned" class="form-check-label">
+                                <i class="fas fa-thumbtack"></i> Pin this announcement
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'announcements' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Post Announcement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+
+{% block title %}{% if is_team_lead %}Edit Task{% else %}Update Task{% endif %} - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">
+                {% if is_team_lead %}
+                    <i class="fas fa-edit"></i> Edit Task
+                {% else %}
+                    <i class="fas fa-sync"></i> Update Task
+                {% endif %}
+            </h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card-custom">
+                {% if is_team_lead %}
+                    <h3><i class="fas fa-crown text-warning"></i> {{ task.team.team_name }} </h3>
+                    <p class="text-muted">You can edit all fields of this task</p>
+                {% else %}
+                    <h3>{{ task.title }}</h3>
+                    <p class="text-muted">Assigned to: {{ task.assigned_to.user.username }}</p>
+                    <p class="text-muted">Due: {{ task.due_date|date:"M d, Y" }}</p>
+                {% endif %}
+                
+                <hr>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    {% if is_team_lead %}
+                        <!-- Full Edit Form for Team Leads -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Task Title <span class="text-danger">*</span></label>
+                            {{ form.title }}
+                            <small class="form-text text-muted">A clear, descriptive title for the task</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description <span class="text-danger">*</span></label>
+                            {{ form.description }}
+                            <small class="form-text text-muted">Detailed description of what needs to be done</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">Assign To <span class="text-danger">*</span></label>
+                                {{ form.assigned_to }}
+                                <small class="form-text text-muted">Select team member to assign this task</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.team.id_for_label }}" class="form-label"> <span class="text-danger"></span></label>
+                                {{ form.team }}
+                            </div>
+                        </div>
+                        
+<div class="mb-3">
+    <label for="{{ form.priority.id_for_label }}" class="form-label">
+        Priority <span class="text-danger">*</span>
+    </label>
+    {{ form.priority }}
+</div>
+
+<div class="mb-3">
+    <label for="{{ form.status.id_for_label }}" class="form-label">
+        Status <span class="text-danger">*</span>
+    </label>
+    {{ form.status }}
+</div>
+
+<div class="mb-3">
+    <label for="{{ form.due_date.id_for_label }}" class="form-label">
+        Due Date <span class="text-danger">*</span>
+    </label>
+    {{ form.due_date }}
+</div>
+
+                    {% else %}
+                        <!-- Limited Form for Employees -->
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                            {{ form.status }}
+                            <small class="form-text text-muted">Update the current status of your task</small>
+                        </div>
+                    {% endif %}
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong><i class="fas fa-exclamation-circle"></i> Please fix the following errors:</strong>
+                        <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{% if field != '__all__' %}<strong>{{ field|title }}:</strong> {% endif %}{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="fas fa-save"></i> {% if is_team_lead %}Save Changes{% else %}Update Task{% endif %}
+                        </button>
+                        <a href="{% url 'tasks' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        {% if is_team_lead %}
+                        <button type="button" class="btn btn-danger float-end" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash"></i> Delete Task
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card-custom">
+                <h4><i class="fas fa-info-circle"></i> Task Details</h4>
+                <hr>
+                <p><strong>Priority:</strong>
+                    {% if task.priority == 'high' %}
+                        <span class="badge bg-danger">High</span>
+                    {% elif task.priority == 'medium' %}
+                        <span class="badge bg-warning">Medium</span>
+                    {% else %}
+                        <span class="badge bg-info">Low</span>
+                    {% endif %}
+                </p>
+                <p><strong>Current Status:</strong>
+                    {% if task.status == 'completed' %}
+                        <span class="badge bg-success">Completed</span>
+                    {% elif task.status == 'in_progress' %}
+                        <span class="badge bg-primary">In Progress</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                </p>
+                <p><strong>Assigned To:</strong> {{ task.assigned_to.user.full_name|default:task.assigned_to.user.username }}</p>
+                <p><strong>Team:</strong> {{ task.team.team_name }}</p>
+                <p><strong>Created:</strong> {{ task.created_at|date:"M d, Y" }}</p>
+                <p><strong>Last Updated:</strong> {{ task.updated_at|date:"M d, Y H:i" }}</p>
+                <p><strong>Created By:</strong> {{ task.created_by.full_name|default:task.created_by.username }}</p>
+                
+                {% if task.is_overdue %}
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>This task is overdue!</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if is_team_lead %}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-trash"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Are you sure you want to delete this task?</strong></p>
+                <div class="alert alert-warning">
+                    <p class="mb-1"><strong>Task:</strong> {{ task.title }}</p>
+                    <p class="mb-1"><strong>Assigned to:</strong> {{ task.assigned_to.user.username }}</p>
+                    <p class="mb-1"><strong>Due Date:</strong> {{ task.due_date|date:"M d, Y" }}</p>
+                </div>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> This action cannot be undone!
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <form method="POST" action="{% url 'delete_task' task.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete Task
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

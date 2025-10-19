@@ -1,0 +1,137 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+{% load static %}
+
+{% block title %}Profile - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">My Profile</h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card-custom text-center">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" 
+                         class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <i class="fas fa-user-circle fa-8x text-secondary mb-3"></i>
+                {% endif %}
+                
+                <h3>{{ user.username }}</h3>
+                <p class="text-muted">{{ user.role }}</p>
+                <p><i class="fas fa-envelope"></i> {{ user.email }}</p>
+                <p><i class="fas fa-calendar"></i> Joined {{ user.joined_date|date:"M d, Y" }}</p>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card-custom">
+                <h3>Edit Profile</h3>
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                        {{ form.username }}
+                        <small class="form-text text-muted">
+                            <i class="fas fa-lock"></i> Username cannot be changed for security reasons
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                        {{ form.email }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.bio.id_for_label }}" class="form-label">Bio</label>
+                        {{ form.bio }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.profile_picture.id_for_label }}" class="form-label">Profile Picture</label>
+                        {{ form.profile_picture }}
+                        <small class="form-text text-muted">Upload a new profile picture (optional)</small>
+                    </div>
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+            
+            {% if user.is_employee and user.employee_profile.team %}
+            <div class="card-custom mt-4">
+                <h3>My Statistics</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Team:</strong> {{ user.employee_profile.team.team_name }}</p>
+                        <p><strong>Total Tasks:</strong> {{ user.employee_profile.assigned_tasks }}</p>
+                        <p><strong>Completed Tasks:</strong> {{ user.employee_profile.completed_tasks }}</p>
+                        <p><strong>Pending Tasks:</strong> {{ user.employee_profile.pending_tasks }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Burnout Status:</strong> 
+                            {% if user.employee_profile.burnout_status == 'High Risk' %}
+                                <span class="badge bg-danger">{{ user.employee_profile.burnout_status }}</span>
+                            {% elif user.employee_profile.burnout_status == 'Medium Risk' %}
+                                <span class="badge bg-warning">{{ user.employee_profile.burnout_status }}</span>
+                            {% elif user.employee_profile.burnout_status == 'Low Risk' %}
+                                <span class="badge bg-info">{{ user.employee_profile.burnout_status }}</span>
+                            {% else %}
+                                <span class="badge bg-success">{{ user.employee_profile.burnout_status }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% elif user.is_team_lead %}
+            <div class="card-custom mt-4">
+                <h3>My Teams</h3>
+                {% if user.teamlead_profile.teams.all %}
+                <ul class="list-group">
+                    {% for team in user.teamlead_profile.teams.all %}
+                    <li class="list-group-item">
+                        <strong>{{ team.team_name }}</strong>
+                        <span class="float-end">
+                            <span class="badge bg-primary">{{ team.member_count }} members</span>
+                            <span class="badge bg-info">{{ team.total_tasks }} tasks</span>
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">You haven't created any teams yet.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

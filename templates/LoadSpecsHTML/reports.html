@@ -1,0 +1,244 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+
+{% block title %}Reports - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">Reports & Analytics</h1>
+        </div>
+    </div>
+    
+    {% if is_team_lead %}
+    <!-- Team Lead Reports -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h5>Total Employees</h5>
+                <h2 class="text-primary">{{ total_employees|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h5>Total Tasks</h5>
+                <h2 class="text-info">{{ total_tasks|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h5>Completed Tasks</h5>
+                <h2 class="text-success">{{ completed_tasks|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-custom text-center">
+                <h5>Pending Tasks</h5>
+                <h2 class="text-warning">{{ pending_tasks|default:0 }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    {% if chart %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>Mood Distribution</h3>
+                <div class="text-center">
+                    <img src="data:image/png;base64,{{ chart }}" alt="Mood Chart" class="img-fluid" style="max-width: 600px;">
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>Mood Statistics (Last 30 Days)</h3>
+                <div class="row text-center mt-3">
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-smile fa-3x text-success"></i>
+                            <h4 class="mt-2">{{ mood_counts.happy|default:0 }}</h4>
+                            <p>Happy</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-meh fa-3x text-secondary"></i>
+                            <h4 class="mt-2">{{ mood_counts.neutral|default:0 }}</h4>
+                            <p>Neutral</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-frown fa-3x text-warning"></i>
+                            <h4 class="mt-2">{{ mood_counts.stressed|default:0 }}</h4>
+                            <p>Stressed</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-fire fa-3x text-danger"></i>
+                            <h4 class="mt-2">{{ mood_counts.burnout|default:0 }}</h4>
+                            <p>Burnout</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>Generate Report</h3>
+                <form method="POST" action="{% url 'generate_report' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="row g-3 align-items-end">
+    <div class="col-md-5">
+        <div class="mb-3">
+            <label for="team_id" class="form-label">Select Team</label>
+            <select name="team_id" id="team_id" class="form-select" required>
+                <option value="">Choose a team...</option>
+                {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.team_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="mb-3">
+            <label for="report_type" class="form-label">Report Type</label>
+            <select name="report_type" id="report_type" class="form-select" required>
+                <option value="workload">Workload Summary</option>
+                <option value="burnout">Burnout Analysis</option>
+                <option value="performance">Performance Report</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="mb-3">
+            <label class="form-label d-block">&nbsp;</label>
+            <button type="submit" class="btn btn-primary-custom w-100">
+                <i class="fas fa-file-alt"></i> Generate
+            </button>
+        </div>
+    </div>
+</div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    {% if recent_reports %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>Recent Reports</h3>
+                {% for report in recent_reports %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <strong>{{ report.team.team_name }}</strong> - {{ report.get_report_type_display }}
+                        <span class="float-end text-muted">{{ report.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="card-body">
+                        <pre style="white-space: pre-wrap;">{{ report.summary_text }}</pre>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% elif is_employee %}
+    <!-- Employee Reports -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card-custom text-center">
+                <h5>My Tasks</h5>
+                <h2 class="text-primary">{{ my_tasks|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom text-center">
+                <h5>Completed</h5>
+                <h2 class="text-success">{{ my_completed|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom text-center">
+                <h5>Pending</h5>
+                <h2 class="text-warning">{{ my_pending|default:0 }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>My Performance</h3>
+                {% if my_tasks > 0 %}
+                <div class="mb-3">
+                    <p><strong>Completion Rate:</strong></p>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" style="width: {{ my_completed|default:0|floatformat:0 }}%"></div>
+                    </div>
+                    <small>{{ my_completed|default:0 }} / {{ my_tasks }} tasks completed</small>
+                </div>
+                {% else %}
+                <p class="text-muted">No tasks assigned yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if recent_moods %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>My Mood History</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Mood</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mood in recent_moods %}
+                            <tr>
+                                <td>{{ mood.timestamp|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if mood.mood == 'happy' %}
+                                        <span class="badge bg-success">😊 Happy</span>
+                                    {% elif mood.mood == 'neutral' %}
+                                        <span class="badge bg-secondary">😐 Neutral</span>
+                                    {% elif mood.mood == 'stressed' %}
+                                        <span class="badge bg-warning">😰 Stressed</span>
+                                    {% elif mood.mood == 'burnout' %}
+                                        <span class="badge bg-danger">🔥 Burnout</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mood.notes|default:"No notes" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

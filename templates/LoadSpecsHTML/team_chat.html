@@ -1,0 +1,316 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+{% load static %}
+
+{% block title %}{{ team.team_name }} Chat - LoadSpecs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 150px);
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .chat-header {
+        padding: 20px;
+        background: #003135;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f5f5f5;
+    }
+    
+    .message {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .message.own {
+        flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #00bcd4;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .message-content {
+        max-width: 60%;
+    }
+    
+    .message-bubble {
+        background: white;
+        padding: 12px 16px;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .message.own .message-bubble {
+        background: #00bcd4;
+        color: white;
+    }
+    
+    .message-sender {
+        font-weight: bold;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+    
+    .message.own .message-sender {
+        display: none;
+    }
+    
+    .message-text {
+        margin-bottom: 4px;
+        word-wrap: break-word;
+    }
+    
+    .message-time {
+        font-size: 11px;
+        opacity: 0.7;
+    }
+    
+    .chat-input {
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        background: white;
+    }
+    
+    .chat-input-form {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .chat-input input {
+        flex: 1;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    .chat-input input:focus {
+        border-color: #00bcd4;
+        outline: none;
+    }
+    
+    .chat-input button {
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        background: #00bcd4;
+        border: none;
+        color: white;
+    }
+    
+    .chat-input button:hover {
+        background: #0097a7;
+    }
+    
+    .typing-indicator {
+        padding: 10px 20px;
+        font-style: italic;
+        color: #666;
+        font-size: 13px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="mb-3">
+        <a href="{% url 'chat' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Chats
+        </a>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <div>
+                <h4 class="mb-0"><i class="fas fa-users"></i> {{ team.team_name }}</h4>
+                <small>{{ team.member_count }} members</small>
+            </div>
+            <div>
+                <span class="badge badge-success"><i class="fas fa-circle"></i> Online</span>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% for message in messages %}
+                <div class="message {% if message.sender == user %}own{% endif %}">
+                    <div class="message-avatar">
+                        {{ message.sender.username|slice:":1"|upper }}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <div class="message-sender">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+                            <div class="message-text">{{ message.content }}</div>
+                            <div class="message-time">{{ message.timestamp|date:"h:i A" }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-comments fa-3x mb-3"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+            Someone is typing...
+        </div>
+        
+        <div class="chat-input">
+            <form class="chat-input-form" id="messageForm">
+                {% csrf_token %}
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Type your message..." 
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const teamId = {{ team.id }};
+    const currentUser = "{{ user.username }}";
+    const userId = {{ user.id }};
+    
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    // Auto-scroll to bottom
+    function scrollToBottom() {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    scrollToBottom();
+    
+    // Handle message sending
+    document.getElementById('messageForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value.trim();
+        
+        if (!message) return;
+        
+        try {
+            const response = await fetch('/api/messages/send/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    type: 'team',
+                    target_id: teamId,
+                    content: message
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Add message to chat
+                addMessageToChat(currentUser, message, 'just now', true);
+                messageInput.value = '';
+                scrollToBottom();
+            } else {
+                console.error('Server error:', data.error);
+                alert('Failed to send message: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Failed to send message. Please try again.');
+        }
+    });
+    
+    // Add message to chat display
+    function addMessageToChat(sender, content, time, isOwn) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isOwn ? 'own' : ''}`;
+        
+        messageDiv.innerHTML = `
+            <div class="message-avatar">${sender.charAt(0).toUpperCase()}</div>
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${!isOwn ? `<div class="message-sender">${sender}</div>` : ''}
+                    <div class="message-text">${content}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+    }
+    
+    // WebSocket connection for real-time chat (requires channels installation)
+    // Uncomment after installing Django Channels
+    /*
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/team/' + teamId + '/'
+    );
+    
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.username !== currentUser) {
+            addMessageToChat(data.username, data.message, 'just now', false);
+            scrollToBottom();
+        }
+    };
+    
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+    */
+</script>
+{% endblock %}

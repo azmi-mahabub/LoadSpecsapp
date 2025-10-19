@@ -1,0 +1,206 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+{% load static %}
+
+{% block title %}{{ task.title }} Discussion - LoadSpecs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 150px);
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .chat-header {
+        padding: 20px;
+        background: #003135;
+        color: white;
+    }
+    
+    .task-info {
+        background: rgba(255,255,255,0.1);
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f5f5f5;
+    }
+    
+    .message {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .message.own {
+        flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #00bcd4;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .message-bubble {
+        background: white;
+        padding: 12px 16px;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        max-width: 60%;
+    }
+    
+    .message.own .message-bubble {
+        background: #00bcd4;
+        color: white;
+    }
+    
+    .chat-input {
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .chat-input input {
+        flex: 1;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        padding: 12px 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="mb-3">
+        <a href="{% url 'chat' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Chats
+        </a>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <h4 class="mb-0"><i class="fas fa-tasks"></i> Task Discussion</h4>
+            <div class="task-info">
+                <strong>{{ task.title }}</strong><br>
+                <small>Assigned to: {{ task.assigned_to.user.username }} | Due: {{ task.due_date }}</small>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% for message in messages %}
+                <div class="message {% if message.sender == user %}own{% endif %}">
+                    <div class="message-avatar">
+                        {{ message.sender.username|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <div class="message-bubble">
+                            <strong>{{ message.sender.username }}</strong><br>
+                            {{ message.content }}
+                            <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">
+                                {{ message.timestamp|date:"h:i A" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-comments fa-3x mb-3"></i>
+                    <p>No discussion yet. Start talking about this task!</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="chat-input">
+            <form class="d-flex gap-2" id="messageForm">
+                {% csrf_token %}
+                <input type="text" id="messageInput" placeholder="Discuss this task..." autocomplete="off" required>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const taskId = {{ task.id }};
+    
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    function scrollToBottom() {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    scrollToBottom();
+    
+    document.getElementById('messageForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value.trim();
+        
+        if (!message) return;
+        
+        try {
+            const response = await fetch('/api/messages/send/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    type: 'task',
+                    target_id: taskId,
+                    content: message
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                location.reload(); // Reload to show new message
+            } else {
+                alert('Failed to send message: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to send message');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,276 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+{% load static %}
+
+{% block title %}Performance Dashboard - LoadSpecs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,188,212,0.3);
+    }
+    
+    .stat-value {
+        font-size: 48px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .stat-label {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 20px;
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, #003135 0%, #006064 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="dashboard-header">
+        <h2><i class="fas fa-chart-line"></i> Performance Dashboard</h2>
+        <p class="mb-0">Real-time analytics and insights</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="stat-card">
+                <div class="stat-label">
+                    <i class="fas fa-tasks"></i> Total Tasks
+                </div>
+                <div class="stat-value">{{ total_tasks|default:0 }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);">
+                <div class="stat-label">
+                    <i class="fas fa-check-circle"></i> Completed
+                </div>
+                <div class="stat-value">{{ completed_tasks|default:0 }}</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+                <div class="stat-label">
+                    <i class="fas fa-percentage"></i> Completion Rate
+                </div>
+                <div class="stat-value">{{ completion_rate|default:0 }}%</div>
+            </div>
+        </div>
+    </div>
+    
+    {% if is_team_lead %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h4><i class="fas fa-chart-bar"></i> Task Completion Trends</h4>
+                    <div class="chart-container">
+                        <canvas id="productivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h4><i class="fas fa-smile"></i> Mood Trends (Weekly)</h4>
+                    <div class="chart-container">
+                        <canvas id="moodTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="dashboard-card">
+                    <h4><i class="fas fa-users"></i> Team Productivity Comparison</h4>
+                    <div class="chart-container">
+                        <canvas id="teamComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% elif is_employee %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="dashboard-card">
+                    <h4><i class="fas fa-chart-line"></i> My Performance</h4>
+                    <div class="chart-container">
+                        <canvas id="myPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    {% if is_team_lead %}
+        // Productivity Chart
+        fetch('/api/dashboard/productivity/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const ctx = document.getElementById('productivityChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.data.map(d => d.date),
+                            datasets: [{
+                                label: 'Tasks Completed',
+                                data: data.data.map(d => d.completed),
+                                borderColor: '#00bcd4',
+                                backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        
+        // Mood Trends Chart
+        fetch('/api/dashboard/mood-trends/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const ctx = document.getElementById('moodTrendsChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.data.map(d => d.week),
+                            datasets: [
+                                {
+                                    label: 'Happy',
+                                    data: data.data.map(d => d.happy),
+                                    backgroundColor: '#4caf50'
+                                },
+                                {
+                                    label: 'Neutral',
+                                    data: data.data.map(d => d.neutral),
+                                    backgroundColor: '#ffc107'
+                                },
+                                {
+                                    label: 'Stressed',
+                                    data: data.data.map(d => d.stressed),
+                                    backgroundColor: '#ff9800'
+                                },
+                                {
+                                    label: 'Burnout',
+                                    data: data.data.map(d => d.burnout),
+                                    backgroundColor: '#f44336'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    stacked: true
+                                },
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        
+        // Team Comparison Chart
+        fetch('/api/dashboard/team-comparison/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const ctx = document.getElementById('teamComparisonChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.data.map(d => d.team),
+                            datasets: [{
+                                label: 'Completion Rate (%)',
+                                data: data.data.map(d => d.completion_rate),
+                                backgroundColor: '#00bcd4',
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+    {% elif is_employee %}
+        // Employee performance chart
+        const ctx = document.getElementById('myPerformanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'Remaining'],
+                datasets: [{
+                    data: [{{ completed_tasks|default:0 }}, {{ total_tasks|default:0 }} - {{ completed_tasks|default:0 }}],
+                    backgroundColor: ['#4caf50', '#e0e0e0']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    {% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+
+{% block title %}Mood Check-in - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">Mood Check-in</h1>
+            <p class="lead">How are you feeling today?</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card-custom">
+                <p class="text-muted mb-4">
+                    Regular mood check-ins help your team lead understand team well-being and identify potential burnout risks.
+                    Your responses are used to improve team management and workload distribution.
+                </p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.mood.id_for_label }}" class="form-label">How do you feel?</label>
+                        {{ form.mood }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notes (Optional)</label>
+                        {{ form.notes }}
+                        <small class="form-text text-muted">
+                            Share any thoughts about your workload, challenges, or suggestions
+                        </small>
+                    </div>
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="fas fa-paper-plane"></i> Submit Check-in
+                    </button>
+                    <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card-custom">
+                <h4><i class="fas fa-info-circle"></i> About Mood Check-ins</h4>
+                
+                <div class="mb-3">
+                    <p><strong>Why track mood?</strong></p>
+                    <p class="small">Regular mood tracking helps identify patterns, prevent burnout, and improve team dynamics.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <p><strong>Mood Levels:</strong></p>
+                    <ul class="small">
+                        <li><span class="badge bg-success">😊 Happy</span> - Feeling great and productive</li>
+                        <li><span class="badge bg-secondary">😐 Neutral</span> - Normal workday</li>
+                        <li><span class="badge bg-warning">😰 Stressed</span> - Feeling overwhelmed</li>
+                        <li><span class="badge bg-danger">🔥 Burnout</span> - Exhausted and need support</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info small">
+                    <i class="fas fa-lock"></i> Your mood data is confidential and used only for team analytics.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

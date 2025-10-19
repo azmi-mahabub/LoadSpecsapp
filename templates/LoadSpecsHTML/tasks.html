@@ -1,0 +1,222 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+
+{% block title %}Tasks - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="display-4">Tasks</h1>
+                {% if is_team_lead %}
+                <div>
+                    <a href="{% url 'create_task' %}" class="btn btn-danger-custom">
+                        <i class="fas fa-plus"></i> Assign New Task
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if is_team_lead %}
+    <!-- Team Lead View -->
+    {% if employees_with_tasks %}
+    {% for item in employees_with_tasks %}
+    <div class="card-custom mb-4">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <strong>Employee Name</strong>
+                <p>{{ item.employee.user.username }}</p>
+            </div>
+            <div class="col-md-3">
+                <strong>Role</strong>
+                <p>Employee</p>
+            </div>
+            <div class="col-md-3">
+                <strong>Team Name</strong>
+                <p>{{ item.team.team_name }}</p>
+            </div>
+            <div class="col-md-3">
+                <strong>Burnout Analysis</strong>
+                <p>
+                    {% with score=item.employee.calculate_burnout_score %}
+                        {% if score >= 81 %}
+                            <span class="badge bg-danger" style="font-size: 14px;">
+                                {{ item.employee.burnout_status }}
+                            </span>
+                            <br><small class="text-danger">Score: {{ score }}/100</small>
+                        {% elif score >= 61 %}
+                            <span class="badge bg-warning text-dark" style="font-size: 14px;">
+                                {{ item.employee.burnout_status }}
+                            </span>
+                            <br><small class="text-warning">Score: {{ score }}/100</small>
+                        {% elif score >= 31 %}
+                            <span class="badge bg-info" style="font-size: 14px;">
+                                {{ item.employee.burnout_status }}
+                            </span>
+                            <br><small class="text-info">Score: {{ score }}/100</small>
+                        {% else %}
+                            <span class="badge bg-success" style="font-size: 14px;">
+                                {{ item.employee.burnout_status }}
+                            </span>
+                            <br><small class="text-success">Score: {{ score }}/100</small>
+                        {% endif %}
+                    {% endwith %}
+                </p>
+                <small class="text-muted">{{ item.employee.get_burnout_description }}</small>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-borderless">
+                <thead>
+                    <tr>
+                        <th>Task List</th>
+                        <th>Priority</th>
+                        <th>Deadline Date</th>
+                        <th>Task Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in item.tasks %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-tasks text-primary"></i> <strong>{{ task.title }}</strong>
+                            {% if task.is_overdue %}
+                                <span class="badge bg-danger ms-2">Overdue</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if task.priority == 'high' %}
+                                <span class="badge bg-danger">High</span>
+                            {% elif task.priority == 'medium' %}
+                                <span class="badge bg-warning">Medium</span>
+                            {% else %}
+                                <span class="badge bg-info">Low</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if task.status == 'pending' %}
+                                <span class="badge bg-secondary">Pending</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-primary">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-success">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'update_task' task.id %}" class="btn btn-sm btn-primary me-2" title="Edit Task">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ task.id }}" title="Delete Task">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                            
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteModal{{ task.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Confirm Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete this task?</p>
+                                            <p><strong>Task:</strong> {{ task.title }}</p>
+                                            <p><strong>Assigned to:</strong> {{ task.assigned_to.user.username }}</p>
+                                            <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="POST" action="{% url 'delete_task' task.id %}" style="display:inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fas fa-trash"></i> Delete Task
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No tasks assigned yet. Create tasks to assign to your team members.
+    </div>
+    {% endif %}
+    
+    {% elif is_employee %}
+    <!-- Employee View -->
+    {% if tasks %}
+    <div class="card-custom">
+        <h3>My Tasks</h3>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Description</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>
+                            <strong>{{ task.title }}</strong>
+                            {% if task.is_overdue %}
+                                <span class="badge bg-danger ms-2">Overdue</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task.description|truncatewords:10 }}</td>
+                        <td>
+                            {% if task.priority == 'high' %}
+                                <span class="badge bg-danger">High</span>
+                            {% elif task.priority == 'medium' %}
+                                <span class="badge bg-warning">Medium</span>
+                            {% else %}
+                                <span class="badge bg-info">Low</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if task.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-primary">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'update_task' task.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i> Update
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No tasks assigned to you yet.
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

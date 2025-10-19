@@ -1,0 +1,230 @@
+{% extends 'LoadSpecsHTML/base.html' %}
+
+{% block title %}Home - LoadSpecs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">Welcome {{ user.username }}</h1>
+            <p class="lead text-muted">{{ user.role }}, LoadSpecs</p>
+        </div>
+    </div>
+    
+    {% if user.is_team_lead %}
+    <!-- Team Lead Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Teams</h2>
+                <a href="{% url 'create_team' %}" class="btn btn-primary-custom">
+                    <i class="fas fa-plus"></i> Create Team
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if teams %}
+    <div class="row">
+        {% for team in teams %}
+        <div class="col-md-4 mb-3">
+            <div class="team-card">
+                <h3>{{ team.team_name }}</h3>
+                <div class="mb-2">
+                    <strong>Assigned Tasks:</strong> {{ team.total_tasks }}
+                </div>
+                <div class="mb-2">
+                    <strong>Tasks Completed:</strong> {{ team.completed_tasks }}
+                </div>
+                <div class="mb-2">
+                    <strong>Tasks Pending:</strong> {{ team.pending_tasks }}
+                </div>
+                <div class="mb-3">
+                    <strong>Progress:</strong>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" style="width: {{ team.progress_percentage }}%"></div>
+                    </div>
+                    <small>{{ team.progress_percentage }}%</small>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-users"></i> {{ team.member_count }} members
+                        | Join Code: <strong>{{ team.join_code }}</strong>
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> You haven't created any teams yet. Click "Create Team" to get started!
+    </div>
+    {% endif %}
+    
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2>Overall Burnout Check-in</h2>
+            <div class="card-custom">
+                {% if recent_moods %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Team</th>
+                                <th>Mood</th>
+                                <th>Date</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mood in recent_moods %}
+                            <tr>
+                                <td>{{ mood.employee.user.username }}</td>
+                                <td>{{ mood.team.team_name }}</td>
+                                <td>
+                                    {% if mood.mood == 'happy' %}
+                                        <span class="badge bg-success">😊 Happy</span>
+                                    {% elif mood.mood == 'neutral' %}
+                                        <span class="badge bg-secondary">😐 Neutral</span>
+                                    {% elif mood.mood == 'stressed' %}
+                                        <span class="badge bg-warning">😰 Stressed</span>
+                                    {% elif mood.mood == 'burnout' %}
+                                        <span class="badge bg-danger">🔥 Burnout</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mood.timestamp|date:"M d, Y" }}</td>
+                                <td>{{ mood.notes|default:"No notes" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No mood check-ins recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif user.is_employee %}
+    <!-- Employee Dashboard -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card-custom">
+                <h4><i class="fas fa-tasks"></i> My Tasks</h4>
+                <h2>{{ tasks.count|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom">
+                <h4><i class="fas fa-check-circle"></i> Completed</h4>
+                <h2 class="text-success">{{ completed_tasks.count|default:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom">
+                <h4><i class="fas fa-clock"></i> Pending</h4>
+                <h2 class="text-warning">{{ pending_tasks.count|default:0 }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    {% if team %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3><i class="fas fa-users"></i> My Team: {{ team.team_name }}</h3>
+                <p class="text-muted">{{ team.description }}</p>
+                <div class="mt-3">
+                    <small>
+                        <strong>Team Progress:</strong>
+                        <div class="progress-bar-custom mt-2">
+                            <div class="progress-fill" style="width: {{ team.progress_percentage }}%"></div>
+                        </div>
+                        {{ team.progress_percentage }}% complete
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h3>My Recent Tasks</h3>
+            {% if tasks %}
+            <div class="card-custom">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>{{ task.title }}</td>
+                                <td>
+                                    {% if task.priority == 'high' %}
+                                        <span class="badge bg-danger">High</span>
+                                    {% elif task.priority == 'medium' %}
+                                        <span class="badge bg-warning">Medium</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Low</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif task.status == 'in_progress' %}
+                                        <span class="badge bg-primary">In Progress</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'update_task' task.id %}" class="btn btn-sm btn-primary">Update</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No tasks assigned yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card-custom">
+                <h3>How are you feeling today?</h3>
+                <p class="text-muted">Track your mood to help your team lead understand team well-being.</p>
+                <a href="{% url 'mood_checkin' %}" class="btn btn-primary-custom">
+                    <i class="fas fa-smile"></i> Submit Mood Check-in
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> You're not part of any team yet. 
+        <a href="{% url 'join_team' %}" class="alert-link">Join a team</a> to get started!
+    </div>
+    {% endif %}
+    
+    {% endif %}
+</div>
+{% endblock %}
