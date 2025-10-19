@@ -1,0 +1,7 @@
+<!-- Placeholder: In production, replace with actual PNG image -->
+<!-- This is an SVG placeholder that can be renamed to .svg or replaced with actual PNG -->
+<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+  <rect width="150" height="150" fill="#cccccc"/>
+  <circle cx="75" cy="60" r="25" fill="#999999"/>
+  <ellipse cx="75" cy="130" rx="40" ry="35" fill="#999999"/>
+</svg>
